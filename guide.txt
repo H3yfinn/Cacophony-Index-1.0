@@ -1,0 +1,139 @@
+
+This is a guide to using Cacophony Index 1.0. It is intended to be used while using the functions
+This edition of the guide is a rough one, I mean to make a more friendly one in the future but a guide is a guide right?right..
+
+
+
+Run Detect_voices() first. 
+
+1. If you've set convert=True then before anything else happens, the file will be converted(convert_file_format()) to suit Detect_voices() and it's associated functions. 
+
+2. Now lets load the audio file. This function(read_wave()) also checks the file is in the correct format. If the file is not in the correct format and convert=False, an AssertionError will be thrown when we load the file in read_wave().
+
+
+Convert_file_format():
+
+if convert ==True: run over the file using convert_file_format ('birdsong.mp3') and check and/or change to:
+
+data format=int16, mono, sample_width=2(never been to clear on the usefulness of this value?), sample_rate is either 8000, 16000 or 32000.(I've made the function set the sample rate to 16000 in all cases if convert==True)
+
+
+3. Initialise webrtcvad.Vad
+
+4. split audio into frames using frame generator. 
+
+    -frame generator creates frames from the samples in 'audio'. The frames are 3ms long with sample_rate usually being 16000 if it was set in 'convert_file_format()'
+
+5. Insert frames into 'vad_collector'. This takes the frames and puts the samples inside them through the 'vad'. We begin with a closed 'segment'. Once we find 10 frames in a row marked as having voice, we open a 'segment' to put all successive frames in until we find 10 frames in a row 'wihout voice', in which case we close the segment. So on. These segments will act as timestamps for area marked as having voice. 
+
+6. Once we have gone through all frames we create our timestamps from the segments and also if save_voices==True, we save all the segments to one .wav file to listen to (helps to check what noises are being marked as voice)
+
+Finished with detect_voices! return timestamps
+
+
+Next up is running the voice scrubbing function (mute_voices()).
+
+Mute voices will take the file you want to analyse. This can be any file format IE. if you needed to change to int16 for detect_voices, this function shouldn't actually use the new int16 file (because it is worse quality and therefore worse for analysis). The end result of mute_voices is a .wav file with the areas of voice marked by the timestamps, muted.
+
+The muting process (mute_sections()) basically sets all bytes of sound within the timestamps to 0. 
+
+
+
+
+
+Birdsong detection:
+
+This process is run using detect_events(). It takes 9 arguments (which are described in the code). The arguements(except 'path' - the file to be processed) all have default options ie. sr=48000 but this can be easily changed within the code. 
+
+I have copied this code from here(https://github.com/kylemcdonald/AudioNotebooks/blob/master/Multisamples%20to%20Samples.ipynb). I have not changed much within the code because of a lack of real understanding in Digital Signal Processing. However, I believe upon a better understanding of it all a few steps could be removed/changed to make the algorithm suited towards detecting birdsong within a noisy soundscape rather than a non-noisy one. In the guide below I have detailed where I feel steps aren't needed.
+
+
+First of all an explanation of a few functions:
+
+
+split_chunks: goes over list of booleans and seperates them into chunks of equal bools. Ie. [T,T,F,T] = [[T,T],[F],[T]]
+
+These Bools represent frames of len(n_fft)(default=2048). If the frame is above x amplitude (amp default=0.3) then the frame is set to True, else False. These bools will be changed by get_optimal_chunks().
+
+
+get_optimal_chunks():min=4, max=468
+
+Attempts to find the best minimum individual chunk length for F's and T's so standard deviation of len(chunk) (for chunk in chunks) is at its minimum. The two frame sizes (for F and T chunks) are called quiet_thresh and sound_thresh - quiet_thresh is the minimum size of False chunks and sound_thresh the minimum size for True Chunks. It is unlikely these will be different because that increases variation. 
+
+I have also noticed that sound_thresh and quiet_thresh are always best at the size of min_duration_frames (which is usually 4). This could easily be a remnant of this process being designed for non-noisy sound files. Could remove and/or replace if this process starts to be used seriously. 
+
+
+replace_small_chunks():
+
+Takes chunks that are below their threshold length and transforms them to their alternate booleans.
+
+
+join_chunks():
+
+Empties all chunks into a single list and re-'chunks' them. Used after replace_small_chunks to join new chunks together.
+
+
+save_birdsong_samples():
+
+Simply splits the list of all recognised birdsong into quarters to be saved for later listening (only if save_samples=True)
+
+
+Detect_events():
+
+This is a large function. 
+
+1. We transform and plot the data as rmse(root mean squared energy) to help normalise the data. 
+
+2. split_chunks(data) will form chunks of T's and F's for the frames in the data. 
+
+3. Use get_optimal_chunks() to find the best minimum individual chunk length for F's and T's so standard deviation of len(chunk) (for chunk in chunks) is at its minimum. 
+
+4. Run Join_chunks(chunks). After running join_chunks(chunks) we should have a set of True and False chunks (et ->I don't know what et stands for) which can be plotted against the rmse wave-plot. (title:BIRDSONG DETECTED Root-mean-square-energy). 
+
+5. The total amount of frames marked as having birdsong (true chunks) is the score we return at the end of the function, the Cacophony Index score for that audio file. 
+
+Detect_events also has the functionality to save the detected birdsong, this can be used if you want to 'hear' what the process thinks is birdsong.
+
+
+About the rmse plot: The plot shows an rmse display of amplitude(normalised) against frames. The 'True' chunks are highlighted on the graph with an orange outline and blue hatching. In the future I would like to change the x-axis from frames to time but in the big scheme of things I don't see it as too much of a problem. 
+
+
+
+Main()
+
+This is the control centre for everything. Not used in the JupyterNotebooks version but is needed for the .py version. Will handle all the different arguments. Here's some basic usage info for command line interaction: Cacophony_index1.py sound_file_path(can also be a folder) save_samples(input True/False) save_plots(input True/False) <multiple_sound_files=False,(set to True if you want to analyse a folder of files.)>
+
+Here are a few examples of how you could interact with the app in the command line:
+
+-python Cacophony_index.py birdsong_files False False True : this will call the app on a folder-birdsong_files, and record scores in scores.csv for all of the files in that folder. (NB. folder must contain only audio files)
+
+-python Cacophony_index.py birdsong False True True : the same as above but we are saving all the plots to show what areas were recognised as birdsong/voice etc.
+
+-python Cacophony_index.py birdsong True True True : the same as above but also saving the detected voice and birsong to audio files. 
+
+-python Cacophony_index.py birdsong/birdsong.wav False True : the same as above but we are only running the process on one file, birdsong.wav in the birdsong folder. This can also be done using: python Cacophony_index.py birdsong/birdsong.wav False True False (ie. the 6th arg. is defaulted at false.)
+
+
+
+If you have any questions please ask me as this is my first ever 'explanation' of a piece of code I've written and I am adamant I've missed something!
+
+
+
+
+
+To learn:
+
+-why would you want the min chunk size to be different for F's vs T's ? Wouldnt that just serve to increase std of chunk sizes?
+
+-why are chunk sizes compared to frame sizes in 'for quiet_thresh in np.linspace(min_length, max_length, n)' where max_length is max_duration_frames? The chunks are literally lists of frames so I don't understand the intention.
+
+-I have also noticed that sound_thresh and quiet_thresh are always best at the size of min_duration_frames (which is usually 4). This could easily be a remnant of this process' application using non-noisy sound files. So is there a way we can remove this feature or even change it to help with noisy files?
+
+-min_duration_frames, max_duration_frames: these lines are used to get the ????
+
+-n_fft, hop_length
+
+
+
+    
+

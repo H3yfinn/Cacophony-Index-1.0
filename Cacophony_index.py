@@ -282,6 +282,8 @@ def mute_sections(y, timestamps, sr, mute_agg):
     y_muted = y.copy()
     for left, right in timestamps:
         left_byte_index = sr*(left-mute_agg)
+        if left < mute_agg:
+            left_byte_index = 0#get those negatives out of here!
         right_byte_index = sr*(right+mute_agg)
         no_voice_bytes = len(y_muted[int(left_byte_index):int(right_byte_index)])
         for sample in range(no_voice_bytes):
