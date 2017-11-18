@@ -398,7 +398,8 @@ def detect_events(path, sr=48000, time_range=(0.05, 5), threshold_amp=0.3, n_fft
     y /= y.max()
      
     # compute the rmse
-    e = librosa.feature.rmse(y=y)[0]
+    s = librosa.stft(y, n_fft, hop_length)
+    e = librosa.feature.rmse(S=s)[0]
     e -= e.min()#what does this really do, guessing a kind of normalisation?
     e /= e.max()
     
@@ -417,7 +418,7 @@ def detect_events(path, sr=48000, time_range=(0.05, 5), threshold_amp=0.3, n_fft
         plt.plot(e)
         plt.plot(et)
         title = basename + ' ' + str(len(y)/sr) + 'seconds' + '\n' + 'BIRDSONG DETECTED Root-mean-square-energy'
-        plt.xlabel('Time')
+        plt.xlabel('Frames')
         plt.ylabel('RMS Energy')
         plt.suptitle(title, fontsize=20)
 

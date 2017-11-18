@@ -2,7 +2,7 @@
 This is a guide to using Cacophony Index 1.0. It is intended to be used while using the functions
 This edition of the guide is a rough one, I mean to make a more friendly one in the future but a guide is a guide right?right..
 
-
+*Please note that the voice_scrubbing process doesn't work well enough to be used on voices >#steps away.If you don't want to know about the voice scubbing just scroll down until you see 'Birdsong detection:'
 
 Run Detect_voices() first. 
 
@@ -45,7 +45,7 @@ Birdsong detection:
 
 This process is run using detect_events(). It takes 9 arguments (which are described in the code). The arguements(except 'path' - the file to be processed) all have default options ie. sr=48000 but this can be easily changed within the code. 
 
-I have copied this code from here(https://github.com/kylemcdonald/AudioNotebooks/blob/master/Multisamples%20to%20Samples.ipynb). I have not changed much within the code because of a lack of real understanding in Digital Signal Processing. However, I believe upon a better understanding of it all a few steps could be removed/changed to make the algorithm suited towards detecting birdsong within a noisy soundscape rather than a non-noisy one. In the guide below I have detailed where I feel steps aren't needed.
+I have copied this code from here(https://github.com/kylemcdonald/AudioNotebooks/blob/master/Multisamples%20to%20Samples.ipynb). I have not changed much within the code because of a lack of real understanding in Digital Signal Processing. However, I believe upon a better understanding of it all a few steps could be removed/changed to make the algorithm suited towards detecting birdsong within a noisy soundscape rather than a non-noisy one.
 
 
 First of all an explanation of a few functions:
@@ -58,10 +58,7 @@ These Bools represent frames of len(n_fft)(default=2048). If the frame is above 
 
 get_optimal_chunks():min=4, max=468
 
-Attempts to find the best minimum individual chunk length for F's and T's so standard deviation of len(chunk) (for chunk in chunks) is at its minimum. The two frame sizes (for F and T chunks) are called quiet_thresh and sound_thresh - quiet_thresh is the minimum size of False chunks and sound_thresh the minimum size for True Chunks. It is unlikely these will be different because that increases variation. 
-
-I have also noticed that sound_thresh and quiet_thresh are always best at the size of min_duration_frames (which is usually 4). This could easily be a remnant of this process being designed for non-noisy sound files. Could remove and/or replace if this process starts to be used seriously. 
-
+Attempts to find the best minimum individual chunk length for F's and T's so standard deviation of len(chunk) (for chunk in chunks) is at its minimum. The two frame sizes (for F and T chunks) are called quiet_thresh and sound_thresh - quiet_thresh is the minimum size of False chunks and sound_thresh the minimum size for True Chunks.
 
 replace_small_chunks():
 
@@ -123,11 +120,9 @@ If you have any questions please ask me as this is my first ever 'explanation' o
 
 To learn:
 
--why would you want the min chunk size to be different for F's vs T's ? Wouldnt that just serve to increase std of chunk sizes?
+-why would you want the min chunk size to be different for F's vs T's ?
 
 -why are chunk sizes compared to frame sizes in 'for quiet_thresh in np.linspace(min_length, max_length, n)' where max_length is max_duration_frames? The chunks are literally lists of frames so I don't understand the intention.
-
--I have also noticed that sound_thresh and quiet_thresh are always best at the size of min_duration_frames (which is usually 4). This could easily be a remnant of this process' application using non-noisy sound files. So is there a way we can remove this feature or even change it to help with noisy files?
 
 -min_duration_frames, max_duration_frames: these lines are used to get the ????
 
